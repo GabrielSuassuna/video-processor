@@ -58,13 +58,11 @@ func resizeVertical(src image.Image, height int) (*image.NRGBA, error) {
 		return nil, fmt.Errorf("failed to calculate weights for vertical resize")
 	}
 
-	weightsPerPixel := len(weights) / height
-
 	// Process each column
 	for x := 0; x < srcWidth; x++ {
 		for dstY := 0; dstY < height; dstY++ {
 			var r, g, b, a float64
-			weightIdx := dstY * weightsPerPixel
+			pixelWeights := weights[dstY]
 
 			scale := float64(srcHeight) / float64(height)
 			center := (float64(dstY)+0.5)*scale - 0.5
@@ -83,8 +81,9 @@ func resizeVertical(src image.Image, height int) (*image.NRGBA, error) {
 				right = srcHeight - 1
 			}
 
-			for srcY := left; srcY <= right && weightIdx < len(weights); srcY++ {
-				weight := weights[weightIdx]
+			weightIdx := 0
+			for srcY := left; srcY <= right && weightIdx < len(pixelWeights); srcY++ {
+				weight := pixelWeights[weightIdx]
 				if weight != 0 {
 					srcColor := src.At(x+srcBounds.Min.X, srcY+srcBounds.Min.Y)
 					srcR, srcG, srcB, srcA := srcColor.RGBA()
@@ -151,13 +150,11 @@ func resizeHorizontal(src image.Image, width int) (*image.NRGBA, error) {
 		return nil, fmt.Errorf("failed to calculate weights for horizontal resize")
 	}
 
-	weightsPerPixel := len(weights) / width
-
 	// Process each row
 	for y := 0; y < srcHeight; y++ {
 		for dstX := 0; dstX < width; dstX++ {
 			var r, g, b, a float64
-			weightIdx := dstX * weightsPerPixel
+			pixelWeights := weights[dstX]
 
 			scale := float64(srcWidth) / float64(width)
 			center := (float64(dstX)+0.5)*scale - 0.5
@@ -176,8 +173,9 @@ func resizeHorizontal(src image.Image, width int) (*image.NRGBA, error) {
 				right = srcWidth - 1
 			}
 
-			for srcX := left; srcX <= right && weightIdx < len(weights); srcX++ {
-				weight := weights[weightIdx]
+			weightIdx := 0
+			for srcX := left; srcX <= right && weightIdx < len(pixelWeights); srcX++ {
+				weight := pixelWeights[weightIdx]
 				if weight != 0 {
 					srcColor := src.At(srcX+srcBounds.Min.X, y+srcBounds.Min.Y)
 					srcR, srcG, srcB, srcA := srcColor.RGBA()
@@ -224,7 +222,7 @@ func resizeHorizontal(src image.Image, width int) (*image.NRGBA, error) {
 	return dst, nil
 }
 
-func calculateWeights(srcSize, dstSize int, filter filters.Resampler) []float64 {
+func calculateWeights(srcSize, dstSize int, filter filters.Resampler) [][]float64 {
 	if srcSize <= 0 || dstSize <= 0 {
 		return nil
 	}
@@ -244,10 +242,9 @@ func calculateWeights(srcSize, dstSize int, filter filters.Resampler) []float64 
 		support *= scale
 	}
 
-	// Total number of weights needed
+	// Total number of weights needed per pixel
 	weightsPerPixel := int(2*support) + 1
-	totalWeights := dstSize * weightsPerPixel
-	weights := make([]float64, totalWeights)
+	weights := make([][]float64, dstSize)
 
 	for dstIdx := 0; dstIdx < dstSize; dstIdx++ {
 		// Calculate the center position in source coordinates
@@ -265,9 +262,12 @@ func calculateWeights(srcSize, dstSize int, filter filters.Resampler) []float64 
 			right = srcSize - 1
 		}
 
+		// Initialize weights slice for this destination pixel
+		weights[dstIdx] = make([]float64, weightsPerPixel)
+
 		// Calculate weights for this destination pixel
 		weightSum := 0.0
-		weightIdx := dstIdx * weightsPerPixel
+		weightIdx := 0
 
 		for srcIdx := left; srcIdx <= right; srcIdx++ {
 			distance := float64(srcIdx) - center
@@ -283,7 +283,7 @@ func calculateWeights(srcSize, dstSize int, filter filters.Resampler) []float64 
 			}
 
 			if weight != 0 {
-				weights[weightIdx] = weight
+				weights[dstIdx][weightIdx] = weight
 				weightSum += weight
 			}
 			weightIdx++
@@ -291,10 +291,8 @@ func calculateWeights(srcSize, dstSize int, filter filters.Resampler) []float64 
 
 		// Normalize weights so they sum to 1
 		if weightSum > 0 {
-			weightIdx = dstIdx * weightsPerPixel
-			for srcIdx := left; srcIdx <= right; srcIdx++ {
-				weights[weightIdx] /= weightSum
-				weightIdx++
+			for i := 0; i < weightsPerPixel; i++ {
+				weights[dstIdx][i] /= weightSum
 			}
 		}
 	}

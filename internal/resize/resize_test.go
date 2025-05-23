@@ -14,7 +14,7 @@ func TestCalculateWeights(t *testing.T) {
 		dstSize  int
 		filter   filters.Resampler
 		wantNil  bool
-		validate func([]float64) bool
+		validate func([][]float64) bool
 	}{
 		{
 			name:    "invalid source size",
@@ -43,7 +43,7 @@ func TestCalculateWeights(t *testing.T) {
 			dstSize: 10,
 			filter:  filters.NewLanczos(2),
 			wantNil: false,
-			validate: func(weights []float64) bool {
+			validate: func(weights [][]float64) bool {
 				return len(weights) > 0
 			},
 		},
@@ -53,7 +53,7 @@ func TestCalculateWeights(t *testing.T) {
 			dstSize: 5,
 			filter:  filters.NewLanczos(2),
 			wantNil: false,
-			validate: func(weights []float64) bool {
+			validate: func(weights [][]float64) bool {
 				return len(weights) > 0
 			},
 		},
@@ -63,7 +63,7 @@ func TestCalculateWeights(t *testing.T) {
 			dstSize: 5,
 			filter:  filters.NewLanczos(2),
 			wantNil: false,
-			validate: func(weights []float64) bool {
+			validate: func(weights [][]float64) bool {
 				return len(weights) > 0
 			},
 		},
@@ -103,17 +103,18 @@ func TestCalculateWeightsNormalization(t *testing.T) {
 	}
 	
 	// Check that weights are properly distributed
-	weightsPerPixel := len(weights) / dstSize
+	if len(weights) != dstSize {
+		t.Fatalf("Expected %d weight arrays, got %d", dstSize, len(weights))
+	}
 	
 	for i := 0; i < dstSize; i++ {
-		start := i * weightsPerPixel
-		end := start + weightsPerPixel
+		pixelWeights := weights[i]
 		
 		sum := 0.0
 		nonZeroCount := 0
-		for j := start; j < end && j < len(weights); j++ {
-			sum += weights[j]
-			if weights[j] != 0 {
+		for j := 0; j < len(pixelWeights); j++ {
+			sum += pixelWeights[j]
+			if pixelWeights[j] != 0 {
 				nonZeroCount++
 			}
 		}
