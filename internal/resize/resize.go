@@ -51,7 +51,7 @@ func resizeVertical(src image.Image, height int) (*image.NRGBA, error) {
 	}
 
 	dst := image.NewNRGBA(image.Rect(0, 0, srcWidth, height))
-	filter := filters.NewLanczos(2)
+	filter := filters.NewLanczos(3)
 	weights := calculateWeights(srcHeight, height, filter)
 
 	if weights == nil {
@@ -144,7 +144,7 @@ func resizeHorizontal(src image.Image, width int) (*image.NRGBA, error) {
 	}
 
 	dst := image.NewNRGBA(image.Rect(0, 0, width, srcHeight))
-	filter := filters.NewLanczos(2)
+	filter := filters.NewLanczos(3)
 	weights := calculateWeights(srcWidth, width, filter)
 
 	if weights == nil {

@@ -4,7 +4,7 @@ A high-performance command-line tool written in Go for resizing images with prof
 
 ## Features
 
-- **High-Quality Resizing**: Uses Lanczos-2 filter for superior image quality
+- **High-Quality Resizing**: Uses Lanczos-3 filter for superior image quality
 - **Anti-Aliasing**: Reduces jagged edges and artifacts during scaling
 - **Detail Preservation**: Maintains fine details during downsampling
 - **Smooth Gradients**: Creates smoother color transitions
@@ -69,14 +69,14 @@ Enable verbose output to see processing details:
 The Image Resizer uses advanced Lanczos interpolation for high-quality resizing:
 
 1. **Weight Calculation**: Computes optimal filter weights for each destination pixel
-2. **Lanczos Filtering**: Applies Lanczos-2 filter for superior quality
+2. **Lanczos Filtering**: Applies Lanczos-3 filter for superior quality
 3. **Color Interpolation**: Uses full-precision (16-bit) color processing
 4. **Normalization**: Ensures weights sum to 1.0 for accurate color reproduction
 5. **Two-Pass Resizing**: Handles complex resizes with horizontal then vertical passes
 
 ### Algorithm Features
 
-- **Lanczos-2 Filter**: Provides excellent balance between sharpness and artifacts
+- **Lanczos-3 Filter**: Provides excellent balance between sharpness and artifacts
 - **Adaptive Support**: Automatically adjusts filter support for downsampling
 - **Bounds Checking**: Prevents memory access errors during processing
 - **Weight Normalization**: Maintains color accuracy across all scaling ratios
@@ -86,7 +86,7 @@ The Image Resizer uses advanced Lanczos interpolation for high-quality resizing:
 - **Reduced Aliasing**: Minimizes stair-stepping and jagged edges
 - **Better Detail Preservation**: Maintains fine image details during scaling
 - **Smoother Gradients**: Creates natural color transitions
-- **Minimal Ringing**: Lanczos-2 reduces common filter artifacts
+- **Minimal Ringing**: Lanczos-3 reduces common filter artifacts
 
 ## Testing
 
@@ -152,25 +152,25 @@ func main() {
         panic(err)
     }
     defer file.Close()
-    
+
     src, err := jpeg.Decode(file)
     if err != nil {
         panic(err)
     }
-    
+
     // Resize with Lanczos filter
     resized, err := resize.Resize(src, 800, 600)
     if err != nil {
         panic(err)
     }
-    
+
     // Save the result
     output, err := os.Create("output.jpg")
     if err != nil {
         panic(err)
     }
     defer output.Close()
-    
+
     jpeg.Encode(output, resized, &jpeg.Options{Quality: 90})
 }
 ```
@@ -179,7 +179,7 @@ func main() {
 
 #### `resize.Resize(src image.Image, width, height int) (*image.NRGBA, error)`
 
-Main resize function that handles both upsampling and downsampling with Lanczos-2 filter.
+Main resize function that handles both upsampling and downsampling with Lanczos-3 filter.
 
 **Parameters:**
 - `src`: Source image implementing the `image.Image` interface
@@ -194,7 +194,7 @@ Main resize function that handles both upsampling and downsampling with Lanczos-
 - Automatic optimization for single-dimension resizes
 - Two-pass resizing for complex scaling operations
 - High-precision color processing (16-bit per channel)
-- Lanczos-2 filter for optimal quality/performance balance
+- Lanczos-3 filter for optimal quality
 
 ## Package Structure
 
@@ -203,7 +203,7 @@ video-processor/
 ├── cmd/main.go              # CLI application
 ├── internal/
 │   ├── filters/filter.go    # Lanczos and other filters
-│   └── resize/              
+│   └── resize/
 │       ├── resize.go        # Main resize functions
 │       └── resize_test.go   # Comprehensive tests
 └── examples/
